@@ -3,6 +3,7 @@ package domain.model.impl;
 import domain.model.Entity;
 import lombok.Getter;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -10,16 +11,16 @@ import java.util.UUID;
 public class RouteHistory extends Entity {
     private final UUID startDotId;
     private final UUID endDotId;
-    private final LocalDateTime createdAt;
+    private final Instant createdAt;
 
-    public RouteHistory(UUID startDotId, UUID endDotId, LocalDateTime createdAt) {
+    public RouteHistory(UUID startDotId, UUID endDotId, Instant createdAt) {
         super();
         this.startDotId = startDotId;
         this.endDotId = endDotId;
         this.createdAt = createdAt;
     }
 
-    public RouteHistory(UUID id, UUID startDotId, UUID endDotId, LocalDateTime createdAt) {
+    public RouteHistory(UUID id, UUID startDotId, UUID endDotId, Instant createdAt) {
         super(id);
         this.startDotId = startDotId;
         this.endDotId = endDotId;

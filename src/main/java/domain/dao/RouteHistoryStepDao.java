@@ -10,10 +10,6 @@ import java.util.UUID;
  * Stores route steps and allows reading steps of a route in correct order.
  */
 
-public interface RouteHistoryStepDao {
-    void save(RouteHistoryStep routeHistoryStep);
-
+public interface RouteHistoryStepDao extends Dao<RouteHistoryStep> {
     List<RouteHistoryStep> findByRouteHistoryId(UUID routeHistoryId);
-
-    long count();
 }
