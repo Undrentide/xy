@@ -1,4 +1,3 @@
-DROP SCHEMA IF EXISTS xy;
 CREATE SCHEMA IF NOT EXISTS xy;
 USE xy;
 
@@ -24,6 +23,7 @@ CREATE TABLE IF NOT EXISTS RouteHistoryStep (
     dot_id VARCHAR(36) NOT NULL,
     step_order INT NOT NULL,
     FOREIGN KEY (route_history_id) REFERENCES RouteHistory(id),
-    FOREIGN KEY (dot_id) REFERENCES Dot(id)
+    FOREIGN KEY (dot_id) REFERENCES Dot(id),
+    UNIQUE (route_history_id, step_order)
     );
 

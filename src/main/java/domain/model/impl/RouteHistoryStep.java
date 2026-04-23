@@ -1,9 +1,11 @@
 package domain.model.impl;
 
 import domain.model.Entity;
+import lombok.Getter;
 
 import java.util.UUID;
 
+@Getter
 public class RouteHistoryStep extends Entity {
     private final UUID routeHistoryId;
     private final UUID dotId;
@@ -21,5 +23,14 @@ public class RouteHistoryStep extends Entity {
         this.routeHistoryId = routeHistoryId;
         this.dotId = dotId;
         this.stepOrder = stepOrder;
+    }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "step %d: %s",
+                stepOrder,
+                dotId
+        );
     }
 }

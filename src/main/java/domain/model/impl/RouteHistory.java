@@ -25,4 +25,14 @@ public class RouteHistory extends Entity {
         this.endDotId = endDotId;
         this.createdAt = createdAt;
     }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "%s -> %s (%s)",
+                startDotId,
+                endDotId,
+                createdAt
+        );
+    }
 }

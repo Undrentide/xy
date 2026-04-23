@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * DAO for Dot persistence.
+ * Provides basic operations for storing and retrieving dots.
+ */
+
 public interface DotDao {
     void save(Dot dot);
 
