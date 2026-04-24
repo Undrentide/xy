@@ -1,0 +1,10 @@
+.idea
+.mvn
+out
+target
+logs
+
+*.log
+*.iml
+
+.gitignore
