@@ -1,22 +1,21 @@
 package domain.dao.impl;
 
-import configuration.JdbcConnectionPool;
+import domain.dao.JdbcAware;
 import domain.dao.RouteHistoryDao;
+import domain.exception.DaoException;
 import domain.model.impl.RouteHistory;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class RouteHistoryDaoImpl implements RouteHistoryDao {
+public class RouteHistoryDaoImpl extends JdbcAware implements RouteHistoryDao {
     private static final String SAVE_SQL = """
             INSERT INTO RouteHistory (id, start_dot_id, end_dot_id, created_at)
             VALUES (?, ?, ?, ?)
@@ -35,21 +34,9 @@ public class RouteHistoryDaoImpl implements RouteHistoryDao {
             LIMIT ?
             """;
 
-    private final JdbcConnectionPool jdbcConnectionPool;
-
-    public RouteHistoryDaoImpl() {
-        this.jdbcConnectionPool = JdbcConnectionPool.getInstance();
-    }
-
-    public RouteHistoryDaoImpl(JdbcConnectionPool jdbcConnectionPool) {
-        this.jdbcConnectionPool = jdbcConnectionPool;
-    }
-
     @Override
     public void save(RouteHistory routeHistory) {
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        execute(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SAVE_SQL)) {
                 preparedStatement.setString(1, routeHistory.getId().toString());
                 preparedStatement.setString(2, routeHistory.getStartDotId().toString());
@@ -57,21 +44,16 @@ public class RouteHistoryDaoImpl implements RouteHistoryDao {
                 preparedStatement.setTimestamp(4, Timestamp.from(routeHistory.getCreatedAt()));
 
                 preparedStatement.executeUpdate();
+            } catch (SQLException e) {
+                throw new DaoException("Failed to save route history with id " + routeHistory.getId(), e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to save route history with id " + routeHistory.getId(), e);
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
+            return null;
+        });
     }
 
     @Override
     public Optional<RouteHistory> findById(UUID id) {
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        return execute(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID_SQL)) {
                 preparedStatement.setString(1, id.toString());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -79,23 +61,18 @@ public class RouteHistoryDaoImpl implements RouteHistoryDao {
                         return Optional.of(mapRow(resultSet));
                     }
                 }
+            } catch (SQLException e) {
+                throw new DaoException("Failed to find route history by id " + id, e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find route history by id " + id, e);
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
-        return Optional.empty();
+            return Optional.empty();
+        });
     }
 
     @Override
     public List<RouteHistory> findLastRoutes(int limit) {
-        List<RouteHistory> routeHistories = new ArrayList<>();
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        return execute(connection -> {
+            List<RouteHistory> routeHistories = new ArrayList<>();
+
             try (PreparedStatement preparedStatement = connection.prepareStatement(FIND_LAST_ROUTES_SQL)) {
                 preparedStatement.setInt(1, limit);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -103,15 +80,11 @@ public class RouteHistoryDaoImpl implements RouteHistoryDao {
                         routeHistories.add(mapRow(resultSet));
                     }
                 }
+            } catch (SQLException e) {
+                throw new DaoException("Failed to find last route history records", e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find last route history records", e);
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
-        return routeHistories;
+            return routeHistories;
+        });
     }
 
     // Maps DB row to RouteHistory entity

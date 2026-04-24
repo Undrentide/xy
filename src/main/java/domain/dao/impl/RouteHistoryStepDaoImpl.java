@@ -1,10 +1,10 @@
 package domain.dao.impl;
 
-import configuration.JdbcConnectionPool;
+import domain.dao.JdbcAware;
 import domain.dao.RouteHistoryStepDao;
+import domain.exception.DaoException;
 import domain.model.impl.RouteHistoryStep;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class RouteHistoryStepDaoImpl implements RouteHistoryStepDao {
+public class RouteHistoryStepDaoImpl extends JdbcAware implements RouteHistoryStepDao {
     private static final String SAVE_SQL = """
             INSERT INTO RouteHistoryStep (id, route_history_id, dot_id, step_order)
             VALUES (?, ?, ?, ?)
@@ -32,21 +32,9 @@ public class RouteHistoryStepDaoImpl implements RouteHistoryStepDao {
             ORDER BY step_order ASC
             """;
 
-    private final JdbcConnectionPool jdbcConnectionPool;
-
-    public RouteHistoryStepDaoImpl() {
-        this.jdbcConnectionPool = JdbcConnectionPool.getInstance();
-    }
-
-    public RouteHistoryStepDaoImpl(JdbcConnectionPool jdbcConnectionPool) {
-        this.jdbcConnectionPool = jdbcConnectionPool;
-    }
-
     @Override
     public void save(RouteHistoryStep routeHistoryStep) {
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        execute(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SAVE_SQL)) {
                 preparedStatement.setString(1, routeHistoryStep.getId().toString());
                 preparedStatement.setString(2, routeHistoryStep.getRouteHistoryId().toString());
@@ -54,23 +42,18 @@ public class RouteHistoryStepDaoImpl implements RouteHistoryStepDao {
                 preparedStatement.setInt(4, routeHistoryStep.getStepOrder());
 
                 preparedStatement.executeUpdate();
+            } catch (SQLException e) {
+                throw new DaoException(
+                        "Failed to save route history step with id " + routeHistoryStep.getId(), e
+                );
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                    "Failed to save route history step with id " + routeHistoryStep.getId(), e
-            );
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
+            return null;
+        });
     }
 
     @Override
     public Optional<RouteHistoryStep> findById(UUID id) {
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        return execute(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID_SQL)) {
                 preparedStatement.setString(1, id.toString());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -78,15 +61,11 @@ public class RouteHistoryStepDaoImpl implements RouteHistoryStepDao {
                         return Optional.of(mapRow(resultSet));
                     }
                 }
+            } catch (SQLException e) {
+                throw new DaoException("Failed to find route history step by id " + id, e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find route history step by id " + id, e);
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
-        return Optional.empty();
+            return Optional.empty();
+        });
     }
 
     /**
@@ -95,10 +74,9 @@ public class RouteHistoryStepDaoImpl implements RouteHistoryStepDao {
      */
     @Override
     public List<RouteHistoryStep> findByRouteHistoryId(UUID routeHistoryId) {
-        List<RouteHistoryStep> routeHistorySteps = new ArrayList<>();
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        return execute(connection -> {
+            List<RouteHistoryStep> routeHistorySteps = new ArrayList<>();
+
             try (PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ROUTE_HISTORY_ID_SQL)) {
                 preparedStatement.setString(1, routeHistoryId.toString());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -106,17 +84,13 @@ public class RouteHistoryStepDaoImpl implements RouteHistoryStepDao {
                         routeHistorySteps.add(mapRow(resultSet));
                     }
                 }
+            } catch (SQLException e) {
+                throw new DaoException(
+                        "Failed to find route history steps for route id " + routeHistoryId, e
+                );
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(
-                    "Failed to find route history steps for route id " + routeHistoryId, e
-            );
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
-        return routeHistorySteps;
+            return routeHistorySteps;
+        });
     }
 
     // Maps DB row to RouteHistoryStep entity

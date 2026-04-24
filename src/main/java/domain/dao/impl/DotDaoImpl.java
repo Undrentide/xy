@@ -1,10 +1,10 @@
 package domain.dao.impl;
 
-import configuration.JdbcConnectionPool;
 import domain.dao.DotDao;
+import domain.dao.JdbcAware;
+import domain.exception.DaoException;
 import domain.model.impl.Dot;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class DotDaoImpl implements DotDao {
+public class DotDaoImpl extends JdbcAware implements DotDao {
     private static final String SAVE_SQL =
             "INSERT INTO Dot (id, name, x, y) VALUES (?, ?, ?, ?)";
 
@@ -23,21 +23,9 @@ public class DotDaoImpl implements DotDao {
     private static final String FIND_ALL_SQL =
             "SELECT id, name, x, y FROM Dot";
 
-    private final JdbcConnectionPool jdbcConnectionPool;
-
-    public DotDaoImpl() {
-        this.jdbcConnectionPool = JdbcConnectionPool.getInstance();
-    }
-
-    public DotDaoImpl(JdbcConnectionPool jdbcConnectionPool) {
-        this.jdbcConnectionPool = jdbcConnectionPool;
-    }
-
     @Override
     public void save(Dot dot) {
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        execute(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SAVE_SQL)) {
                 preparedStatement.setString(1, dot.getId().toString());
                 preparedStatement.setString(2, dot.getName());
@@ -45,21 +33,16 @@ public class DotDaoImpl implements DotDao {
                 preparedStatement.setDouble(4, dot.getY());
 
                 preparedStatement.executeUpdate();
+            } catch (SQLException e) {
+                throw new DaoException("Failed to save dot with id " + dot.getId(), e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to save dot with id " + dot.getId(), e);
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
+            return null;
+        });
     }
 
     @Override
     public Optional<Dot> findById(UUID id) {
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        return execute(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(FIND_BY_ID_SQL)) {
                 preparedStatement.setString(1, id.toString());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -67,37 +50,28 @@ public class DotDaoImpl implements DotDao {
                         return Optional.of(mapRow(resultSet));
                     }
                 }
+            } catch (SQLException e) {
+                throw new DaoException("Failed to find dot by id " + id, e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find dot by id " + id, e);
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
-        return Optional.empty();
+            return Optional.empty();
+        });
     }
 
     @Override
     public List<Dot> findAll() {
-        List<Dot> dots = new ArrayList<>();
-        Connection connection = null;
-        try {
-            connection = jdbcConnectionPool.getConnection();
+        return execute(connection -> {
+            List<Dot> dots = new ArrayList<>();
+
             try (PreparedStatement preparedStatement = connection.prepareStatement(FIND_ALL_SQL);
                  ResultSet resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
                     dots.add(mapRow(resultSet));
                 }
+            } catch (SQLException e) {
+                throw new DaoException("Failed to find all dots", e);
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find all dots", e);
-        } finally {
-            if (connection != null) {
-                jdbcConnectionPool.releaseConnection(connection);
-            }
-        }
-        return dots;
+            return dots;
+        });
     }
 
     // Maps DB row to Dot entity
