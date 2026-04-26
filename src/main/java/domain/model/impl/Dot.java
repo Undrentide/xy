@@ -24,14 +24,4 @@ public class Dot extends Entity {
         this.x = x;
         this.y = y;
     }
-
-    @Override
-    public String toString() {
-        return String.format(
-                "%s (%.2f, %.2f)",
-                name,
-                x,
-                y
-        );
-    }
 }

@@ -13,11 +13,11 @@ public class RouteHistory extends Entity {
     private final UUID endDotId;
     private final Instant createdAt;
 
-    public RouteHistory(UUID startDotId, UUID endDotId, Instant createdAt) {
+    public RouteHistory(UUID startDotId, UUID endDotId) {
         super();
         this.startDotId = startDotId;
         this.endDotId = endDotId;
-        this.createdAt = createdAt;
+        this.createdAt = Instant.now();
     }
 
     public RouteHistory(UUID id, UUID startDotId, UUID endDotId, Instant createdAt) {
@@ -25,15 +25,5 @@ public class RouteHistory extends Entity {
         this.startDotId = startDotId;
         this.endDotId = endDotId;
         this.createdAt = createdAt;
-    }
-
-    @Override
-    public String toString() {
-        return String.format(
-                "%s -> %s (%s)",
-                startDotId,
-                endDotId,
-                createdAt
-        );
     }
 }

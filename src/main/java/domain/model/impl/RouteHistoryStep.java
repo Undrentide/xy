@@ -24,13 +24,4 @@ public class RouteHistoryStep extends Entity {
         this.dotId = dotId;
         this.stepOrder = stepOrder;
     }
-
-    @Override
-    public String toString() {
-        return String.format(
-                "step %d: %s",
-                stepOrder,
-                dotId
-        );
-    }
 }
