@@ -1,4 +1,4 @@
-package domain.dao;
+package domain.dal;
 
 import configuration.JdbcConnectionPool;
 import domain.exception.DaoException;

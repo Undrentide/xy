@@ -30,4 +30,3 @@ CREATE TABLE IF NOT EXISTS RouteHistoryStep
     FOREIGN KEY (dot_id) REFERENCES Dot (id),
     UNIQUE (route_history_id, step_order)
 );
-

@@ -1,4 +1,4 @@
-package domain.dao;
+package domain.dal;
 
 import domain.model.impl.RouteHistoryStep;
 
@@ -9,7 +9,6 @@ import java.util.UUID;
  * DAO for RouteHistoryStep persistence.
  * Stores route steps and allows reading steps of a route in correct order.
  */
-
 public interface RouteHistoryStepDao extends Dao<RouteHistoryStep> {
-    List<RouteHistoryStep> findByRouteHistoryId(UUID routeHistoryId);
+    List<RouteHistoryStep> findRouteHistoryStepListById(UUID routeHistoryId);
 }
