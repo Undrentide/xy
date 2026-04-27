@@ -18,6 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -98,7 +99,7 @@ public class RouteServiceImpl implements RouteService {
 
     private List<List<Dot>> findKShortestPaths(Dot start, Dot end, Map<UUID, List<Dot>> graph) {
         List<List<Dot>> rootPaths = new ArrayList<>();
-        PriorityQueue<List<Dot>> potentialPaths = new PriorityQueue<>(Comparator.comparingDouble(this::calculatePathDistance));
+        Queue<List<Dot>> potentialPaths = new PriorityQueue<>(Comparator.comparingDouble(this::calculatePathDistance));
         List<Dot> firstPath = dijkstra(start, end, graph, Collections.emptySet(), Collections.emptySet());
         if (firstPath.isEmpty()) return rootPaths;
         rootPaths.add(firstPath);
@@ -135,7 +136,7 @@ public class RouteServiceImpl implements RouteService {
     private List<Dot> dijkstra(Dot start, Dot end, Map<UUID, List<Dot>> graph, Set<UUID> ignoredNodes, Set<String> ignoredEdges) {
         Map<UUID, Double> distances = new HashMap<>();
         Map<UUID, Dot> previous = new HashMap<>();
-        PriorityQueue<Dot> queue = new PriorityQueue<>(Comparator.comparingDouble(d -> distances.getOrDefault(d.getId(), Double.MAX_VALUE)));
+        Queue<Dot> queue = new PriorityQueue<>(Comparator.comparingDouble(d -> distances.getOrDefault(d.getId(), Double.MAX_VALUE)));
         distances.put(start.getId(), 0.0);
         queue.add(start);
         while (!queue.isEmpty()) {

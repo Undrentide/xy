@@ -37,7 +37,7 @@ public class RouteHistoryStepDaoImpl extends JdbcAware implements RouteHistorySt
                 preparedStatement.setObject(1, routeHistoryStep.getId());
                 preparedStatement.setObject(2, routeHistoryStep.getRouteHistoryId());
                 preparedStatement.setObject(3, routeHistoryStep.getDotId());
-                preparedStatement.setObject(4, routeHistoryStep.getStepOrder());
+                preparedStatement.setInt(4, routeHistoryStep.getStepOrder());
                 preparedStatement.executeUpdate();
             } catch (SQLException e) {
                 throw new DaoException(
@@ -90,7 +90,7 @@ public class RouteHistoryStepDaoImpl extends JdbcAware implements RouteHistorySt
                 resultSet.getObject("id", UUID.class),
                 resultSet.getObject("route_history_id", UUID.class),
                 resultSet.getObject("dot_id", UUID.class),
-                resultSet.getObject("step_order", Integer.class)
+                resultSet.getInt("step_order")
         );
     }
 }

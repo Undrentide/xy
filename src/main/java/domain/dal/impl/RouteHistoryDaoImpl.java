@@ -8,6 +8,7 @@ import domain.model.impl.RouteHistory;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,7 @@ public class RouteHistoryDaoImpl extends JdbcAware implements RouteHistoryDao {
                 preparedStatement.setObject(1, routeHistory.getId());
                 preparedStatement.setObject(2, routeHistory.getStartDotId());
                 preparedStatement.setObject(3, routeHistory.getEndDotId());
-                preparedStatement.setObject(4, routeHistory.getCreatedAt());
+                preparedStatement.setTimestamp(4, Timestamp.from(routeHistory.getCreatedAt()));
                 preparedStatement.executeUpdate();
             } catch (SQLException e) {
                 throw new DaoException("Failed to save route history with id " + routeHistory.getId(), e);

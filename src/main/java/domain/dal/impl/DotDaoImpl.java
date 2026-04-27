@@ -28,9 +28,9 @@ public class DotDaoImpl extends JdbcAware implements DotDao {
         execute(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SAVE_SQL)) {
                 preparedStatement.setObject(1, dot.getId());
-                preparedStatement.setObject(2, dot.getName());
-                preparedStatement.setObject(3, dot.getX());
-                preparedStatement.setObject(4, dot.getY());
+                preparedStatement.setString(2, dot.getName());
+                preparedStatement.setDouble(3, dot.getX());
+                preparedStatement.setDouble(4, dot.getY());
                 preparedStatement.executeUpdate();
             } catch (SQLException e) {
                 throw new DaoException("Failed to save dot with id " + dot.getId(), e);
@@ -76,8 +76,8 @@ public class DotDaoImpl extends JdbcAware implements DotDao {
         return new Dot(
                 resultSet.getObject("id", UUID.class),
                 resultSet.getString("name"),
-                resultSet.getObject("x", Double.class),
-                resultSet.getObject("y", Double.class)
+                resultSet.getDouble("x"),
+                resultSet.getDouble("y")
         );
     }
 }
