@@ -3,7 +3,6 @@ package domain.service.impl;
 import domain.dal.DotDao;
 import domain.dal.RouteHistoryDao;
 import domain.dal.RouteHistoryStepDao;
-import domain.exception.DaoException;
 import domain.model.impl.Dot;
 import domain.model.impl.RouteHistory;
 import domain.model.impl.RouteHistoryStep;
@@ -42,20 +41,8 @@ public class RouteServiceImpl implements RouteService {
     }
 
     @Override
-    public void initializeApp() {
-        List<Dot> dots = dotDao.findAll();
-        if (dots.isEmpty()) {
-            Random random = new Random();
-            for (int i = 0; i < INITIAL_DOTS_COUNT; i++) {
-                dotDao.save(new Dot("Point_" + i, random.nextDouble() * FIELD_SIZE, random.nextDouble() * FIELD_SIZE));
-            }
-            dots = dotDao.findAll();
-        }
-        currentUserLocation = dots.get(new Random().nextInt(dots.size()));
-    }
-
-    @Override
     public Dot getUserLocation() {
+        ensureUserIsLocated();
         return currentUserLocation;
     }
 
@@ -68,15 +55,16 @@ public class RouteServiceImpl implements RouteService {
 
     @Override
     public void selectAndSaveRoute(List<Dot> route) {
-        if (route == null || route.isEmpty()) return;
-        Dot start = route.getFirst();
-        Dot end = route.getLast();
-        RouteHistory history = new RouteHistory(start.getId(), end.getId());
-        routeHistoryDao.save(history);
-        for (int i = 0; i < route.size(); i++) {
-            routeHistoryStepDao.save(new RouteHistoryStep(history.getId(), route.get(i).getId(), i));
+        if (route != null && !route.isEmpty()) {
+            Dot start = route.getFirst();
+            Dot end = route.getLast();
+            RouteHistory history = new RouteHistory(start.getId(), end.getId());
+            routeHistoryDao.save(history);
+            for (int i = 0; i < route.size(); i++) {
+                routeHistoryStepDao.save(new RouteHistoryStep(history.getId(), route.get(i).getId(), i));
+            }
+            currentUserLocation = end;
         }
-        currentUserLocation = end;
     }
 
     @Override
@@ -101,7 +89,9 @@ public class RouteServiceImpl implements RouteService {
         List<List<Dot>> rootPaths = new ArrayList<>();
         Queue<List<Dot>> potentialPaths = new PriorityQueue<>(Comparator.comparingDouble(this::calculatePathDistance));
         List<Dot> firstPath = dijkstra(start, end, graph, Collections.emptySet(), Collections.emptySet());
-        if (firstPath.isEmpty()) return rootPaths;
+        if (firstPath.isEmpty()) {
+            return rootPaths;
+        }
         rootPaths.add(firstPath);
         for (int i = 1; i < 3; i++) {
             List<Dot> previousPath = rootPaths.get(i - 1);
@@ -141,10 +131,16 @@ public class RouteServiceImpl implements RouteService {
         queue.add(start);
         while (!queue.isEmpty()) {
             Dot u = queue.poll();
-            if (u.getId().equals(end.getId())) break;
+            if (u.getId().equals(end.getId())) {
+                break;
+            }
             for (Dot v : graph.getOrDefault(u.getId(), Collections.emptyList())) {
-                if (ignoredNodes.contains(v.getId())) continue;
-                if (ignoredEdges.contains(u.getId().toString() + "-" + v.getId().toString())) continue;
+                if (ignoredNodes.contains(v.getId())) {
+                    continue;
+                }
+                if (ignoredEdges.contains(u.getId().toString() + "-" + v.getId().toString())) {
+                    continue;
+                }
                 double alt = distances.get(u.getId()) + calculateDistance(u, v);
                 if (alt < distances.getOrDefault(v.getId(), Double.MAX_VALUE)) {
                     distances.put(v.getId(), alt);
@@ -160,17 +156,26 @@ public class RouteServiceImpl implements RouteService {
         return path.size() > 1 && path.getFirst().equals(start) ? path : Collections.emptyList();
     }
 
-    @Override
-    public Dot getRandomDot() {
-        List<Dot> allDots = dotDao.findAll();
-        if (allDots.isEmpty()) {
-            throw new DaoException("No dots available in the database", null);
+    private void ensureUserIsLocated() {
+        if (currentUserLocation == null) {
+            List<Dot> dots = dotDao.findAll();
+            if (dots.isEmpty()) {
+                generateInitialDots();
+                dots = dotDao.findAll();
+            }
+            this.currentUserLocation = dots.get(new Random().nextInt(dots.size()));
         }
-        List<Dot> availableTargets = allDots.stream()
-                .filter(d -> !d.getId().equals(currentUserLocation.getId()))
-                .toList();
+    }
 
-        return availableTargets.get(new Random().nextInt(availableTargets.size()));
+    private void generateInitialDots() {
+        Random random = new Random();
+        for (int i = 0; i < INITIAL_DOTS_COUNT; i++) {
+            dotDao.save(new Dot(
+                    "Point_" + i,
+                    random.nextDouble() * FIELD_SIZE,
+                    random.nextDouble() * FIELD_SIZE
+            ));
+        }
     }
 
     private double calculateDistance(Dot a, Dot b) {

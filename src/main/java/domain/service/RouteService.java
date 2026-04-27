@@ -13,12 +13,6 @@ import java.util.List;
 public interface RouteService {
 
     /**
-     * Initializes the application, generates dots on first run,
-     * and sets the user's initial random location.
-     */
-    void initializeApp();
-
-    /**
      * Retrieves the current location of the user.
      *
      * @return the Dot where the user is currently located.
@@ -44,10 +38,4 @@ public interface RouteService {
      * param route the chosen list of dots to be saved.
      */
     List<RouteHistory> getRouteHistory();
-
-    /**
-     * Retrieves the most recent navigation records.
-     * return a list of RouteHistory entries based on the established limit.
-     */
-    Dot getRandomDot();
 }
