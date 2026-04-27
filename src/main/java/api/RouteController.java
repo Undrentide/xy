@@ -13,15 +13,11 @@ public class RouteController {
         this.routeService = routeService;
     }
 
-    public void initialize() {
-        routeService.initializeApp();
-    }
-
     public Dot getCurrentLocation() {
         return routeService.getUserLocation();
     }
 
-    public List<List<Dot>> getTop3Routes(Dot target) {
+    public List<List<Dot>> getBestThreeRoutes(Dot target) {
         return routeService.buildBestThreeRoutes(target);
     }
 
@@ -31,9 +27,5 @@ public class RouteController {
 
     public List<RouteHistory> getHistory() {
         return routeService.getRouteHistory();
-    }
-
-    public Dot getRandomTarget() {
-        return routeService.getRandomDot();
     }
 }
