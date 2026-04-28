@@ -27,7 +27,7 @@ public class RouteServiceImpl implements RouteService {
     private static final int INITIAL_DOTS_COUNT = 100;
     private static final int HISTORY_LIMIT = 10;
     private static final double FIELD_SIZE = 100.0;
-    private static final int NEIGHBORS_COUNT = 5;
+    private static final int NEIGHBORS_COUNT = 10;
 
     private final DotDao dotDao;
     private final RouteHistoryDao routeHistoryDao;
@@ -74,12 +74,21 @@ public class RouteServiceImpl implements RouteService {
 
     private Map<UUID, List<Dot>> buildGraph(List<Dot> allDots) {
         Map<UUID, List<Dot>> graph = new HashMap<>();
+        double maxRadius = FIELD_SIZE * 0.3;
         for (Dot current : allDots) {
             List<Dot> neighbors = allDots.stream()
                     .filter(dot -> !dot.getId().equals(current.getId()))
+                    .filter(dot -> calculateDistance(current, dot) < maxRadius)
                     .sorted(Comparator.comparingDouble(dot -> calculateDistance(current, dot)))
                     .limit(NEIGHBORS_COUNT)
                     .collect(Collectors.toList());
+            if (neighbors.isEmpty()) {
+                neighbors = allDots.stream()
+                        .filter(dot -> !dot.getId().equals(current.getId()))
+                        .sorted(Comparator.comparingDouble(dot -> calculateDistance(current, dot)))
+                        .limit(3)
+                        .collect(Collectors.toList());
+            }
             graph.put(current.getId(), neighbors);
         }
         return graph;
@@ -87,11 +96,9 @@ public class RouteServiceImpl implements RouteService {
 
     private List<List<Dot>> findKShortestPaths(Dot start, Dot end, Map<UUID, List<Dot>> graph) {
         List<List<Dot>> rootPaths = new ArrayList<>();
-        Queue<List<Dot>> potentialPaths = new PriorityQueue<>(Comparator.comparingDouble(this::calculatePathDistance));
+        PriorityQueue<List<Dot>> potentialPaths = new PriorityQueue<>(Comparator.comparingDouble(this::calculatePathDistance));
         List<Dot> firstPath = dijkstra(start, end, graph, Collections.emptySet(), Collections.emptySet());
-        if (firstPath.isEmpty()) {
-            return rootPaths;
-        }
+        if (firstPath.isEmpty()) return rootPaths;
         rootPaths.add(firstPath);
         for (int i = 1; i < 3; i++) {
             List<Dot> previousPath = rootPaths.get(i - 1);
@@ -105,19 +112,24 @@ public class RouteServiceImpl implements RouteService {
                         ignoredEdges.add(path.get(j).getId().toString() + "-" + path.get(j + 1).getId().toString());
                     }
                 }
-                for (int m = 0; m < rootPathNode.size() - 1; m++) {
-                    ignoredNodes.add(rootPathNode.get(m).getId());
+                for (Dot node : rootPathNode) {
+                    if (!node.getId().equals(spurNode.getId())) {
+                        ignoredNodes.add(node.getId());
+                    }
                 }
                 List<Dot> spurPath = dijkstra(spurNode, end, graph, ignoredNodes, ignoredEdges);
                 if (!spurPath.isEmpty()) {
                     List<Dot> totalPath = new ArrayList<>(rootPathNode);
                     totalPath.addAll(spurPath.subList(1, spurPath.size()));
-                    if (!potentialPaths.contains(totalPath)) {
+                    if (potentialPaths.stream().noneMatch(p -> p.equals(totalPath)) &&
+                            rootPaths.stream().noneMatch(p -> p.equals(totalPath))) {
                         potentialPaths.add(totalPath);
                     }
                 }
             }
-            if (potentialPaths.isEmpty()) break;
+            if (potentialPaths.isEmpty()) {
+                break;
+            }
             rootPaths.add(potentialPaths.poll());
         }
         return rootPaths;
